@@ -95,7 +95,7 @@ jobs:
       - name: Gluon Build
         run: |
           ls App/src/main/resources
-          mvn install
+          mvn install && mvn -Pdesktop gluonfx:build gluonfx:package -f App
 
       - name: Copy native image to staging
         run: cp -r App/target/gluonfx/x86_64-linux/ChatApp* staging
@@ -133,10 +133,7 @@ jobs:
       - name: Create Bundle using jpackage
         id: outputfile
         run: |
-          .github/scripts/build_app_mac.sh \
-          --mac-package-signing-prefix "$GLUON_MACSIGN_PREFIX" \
-          --mac-signing-key-user-name "$GLUON_MACSIGN_USER" \
-          --mac-sign
+          .github/scripts/build_app_mac.sh
           echo ::set-output name=path::App/target/installer/ChatApp-${{ env.APP_VERSION }}.pkg
         env:
           GLUON_MACSIGN_PREFIX: ${{ secrets.GLUON_MACSIGN_PREFIX }}
