@@ -1,8 +1,8 @@
-name: Linux
+name: Build
 
 on:
   push:
-    branches: [ workflows ]
+    branches: [ master ]
 
 jobs:
   linux-jpackage:
