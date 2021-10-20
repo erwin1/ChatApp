@@ -1,8 +1,9 @@
-name: Build
+name: Release
 
 on:
   push:
-    branches: [ master ]
+    tags:
+    - 'v*'
 
 jobs:
   linux-jpackage:
@@ -133,13 +134,26 @@ jobs:
       - name: Create Bundle using jpackage
         id: outputfile
         run: |
-          .github/scripts/build_app_mac.sh
+          .github/scripts/build_app_mac.sh \
+          --mac-package-signing-prefix "$GLUON_MACSIGN_PREFIX" \
+          --mac-signing-key-user-name "$GLUON_MACSIGN_USER" \
+          --mac-sign          
           echo ::set-output name=path::App/target/installer/ChatApp-${{ env.APP_VERSION }}.pkg
         env:
           GLUON_MACSIGN_PREFIX: ${{ secrets.GLUON_MACSIGN_PREFIX }}
           GLUON_MACSIGN_USER: ${{ secrets.GLUON_MACSIGN_USER }}
           PROJECT_VERSION: 1.1.0-SNAPSHOT
           APP_VERSION: 1.0.0
+
+      - name: Notarize Installer
+        uses: erwin1/xcode-notarize@main
+        with:
+          product-path: ${{ steps.outputfile.outputs.path }}
+          appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
+          appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
+          primary-bundle-id: com.gluonhq.chat
+          asc-provider: ${{ secrets.GLUON_MACSIGN_PREFIX }}
+          verbose: false
 
       - name: Upload installer
         uses: actions/upload-artifact@v2
@@ -221,6 +235,14 @@ jobs:
         env:
           PROJECT_VERSION: 1.1.0-SNAPSHOT
           APP_VERSION: 1.0.0
+
+      - name: Codesign
+        uses: erwin1/code-sign-action@master
+        with:
+          certificate: '${{ secrets.WINDOWS_CERTIFICATE }}'
+          password: '${{ secrets.WINDOWS_PASSWORD }}'
+          certificatename: '${{ secrets.WINDOWS_CERTNAME }}'
+          folder: 'App/target/installer'
 
       - name: Upload installer
         uses: actions/upload-artifact@v2
