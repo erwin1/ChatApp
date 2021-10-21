@@ -85,7 +85,7 @@ jobs:
           path: ${{ steps.outputfile.outputs.pathRpm }}
 
       - name: Upload Release Asset (deb)
-        id: upload-release-asset 
+        id: upload-release-asset-deb
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -96,7 +96,7 @@ jobs:
           asset_content_type: application/zip       
 
       - name: Upload Release Asset (rpm)
-        id: upload-release-asset 
+        id: upload-release-asset-rpm 
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
