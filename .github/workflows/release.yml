@@ -10,13 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
-      app_version: ${{ steps.define_version.outputs.APP_VERSION }}
+      app_version: ${{ steps.define_version.outputs.app_version }}
     steps:
       - name: Define version
         id: define_version
         run: |
           APP_VERSION=${GITHUB_REF/refs\/tags\/v/}
-          echo "::set-output name=tag::$APP_VERSION"          
+          echo "Tag: $GITHUB_REF Version = $APP_VERSION"
+          echo "::set-output name=app_version::$APP_VERSION"          
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
