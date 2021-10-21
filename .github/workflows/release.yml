@@ -10,7 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
+      app_version: ${{ steps.define_version.outputs.APP_VERSION }}
     steps:
+      - name: Define version
+        id: define_version
+        run: |
+          APP_VERSION=${GITHUB_REF/refs\/tags\/v/}
+          echo "::set-output name=tag::$APP_VERSION"          
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -19,7 +25,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          draft: false
+          draft: true
           prerelease: false
 
   linux-jpackage:
@@ -69,8 +75,8 @@ jobs:
           mv App/target/installer/*.rpm staging/ChatApp-${{ env.APP_VERSION }}.rpm
           echo ::set-output name=pathRpm::staging/ChatApp-${{ env.APP_VERSION }}.rpm
         env:
-          PROJECT_VERSION: 1.1.0-SNAPSHOT
-          APP_VERSION: 1.0.0
+          PROJECT_VERSION: ${{needs.create-release.outputs.app_version}}
+          APP_VERSION: ${{needs.create-release.outputs.app_version}}
 
       - name: Upload installer (deb)
         uses: actions/upload-artifact@v2
@@ -92,7 +98,7 @@ jobs:
         with:
           upload_url: ${{needs.create-release.outputs.upload_url}}
           asset_path: ${{ steps.outputfile.outputs.pathDeb }}
-          asset_name: ChatApp-${{ env.APP_VERSION }}.deb
+          asset_name: ChatApp-${{needs.create-release.outputs.app_version}}.deb
           asset_content_type: application/zip       
 
       - name: Upload Release Asset (rpm)
@@ -103,7 +109,7 @@ jobs:
         with:
           upload_url: ${{needs.create-release.outputs.upload_url}}
           asset_path: ${{ steps.outputfile.outputs.pathRpm }}
-          asset_name: ChatApp-${{ env.APP_VERSION }}.rpm
+          asset_name: ChatApp-${{needs.create-release.outputs.app_version}}.rpm
           asset_content_type: application/zip                    
 
 
@@ -181,6 +187,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - uses: Apple-Actions/import-codesign-certs@v1
+        with:
+          p12-file-base64: ${{ secrets.CERTIFICATES_FILE_BASE64 }}
+          p12-password: ${{ secrets.CERTIFICATES_PASSWORD }}
+
       - name: Build and package
         run: mvn clean install && mvn package -f App
 
@@ -195,8 +206,8 @@ jobs:
         env:
           GLUON_MACSIGN_PREFIX: ${{ secrets.GLUON_MACSIGN_PREFIX }}
           GLUON_MACSIGN_USER: ${{ secrets.GLUON_MACSIGN_USER }}
-          PROJECT_VERSION: 1.1.0-SNAPSHOT
-          APP_VERSION: 1.0.0
+          PROJECT_VERSION: ${{needs.create-release.outputs.app_version}}
+          APP_VERSION: ${{needs.create-release.outputs.app_version}}
 
       - name: Notarize Installer
         uses: erwin1/xcode-notarize@main
@@ -222,7 +233,7 @@ jobs:
         with:
           upload_url: ${{needs.create-release.outputs.upload_url}}
           asset_path: ${{ steps.outputfile.outputs.path }}
-          asset_name: ChatApp-${{ env.APP_VERSION }}.pkg
+          asset_name: ChatApp-${{needs.create-release.outputs.app_version}}.pkg
           asset_content_type: application/zip             
 
 
@@ -310,8 +321,8 @@ jobs:
           call .github\scripts\build_app_windows.bat
           echo ::set-output name=path::App\target\installer\ChatApp-${{ env.APP_VERSION }}.msi
         env:
-          PROJECT_VERSION: 1.1.0-SNAPSHOT
-          APP_VERSION: 1.0.0
+          PROJECT_VERSION: ${{needs.create-release.outputs.app_version}}
+          APP_VERSION: ${{needs.create-release.outputs.app_version}}
 
       - name: Codesign
         uses: erwin1/code-sign-action@master
@@ -335,7 +346,7 @@ jobs:
         with:
           upload_url: ${{needs.create-release.outputs.upload_url}}
           asset_path: ${{ steps.outputfile.outputs.path }}
-          asset_name: ChatApp-${{ env.APP_VERSION }}.msi
+          asset_name: ChatApp-${{needs.create-release.outputs.app_version}}.msi
           asset_content_type: application/zip                
 
 
